@@ -91,8 +91,8 @@ runs:
         directory: ${{ inputs.directory }}
         workspace: ${{ inputs.workspace }}
         init-args: ${{ inputs.metadata != 'true' && inputs.disable_backend == 'true' && '-backend=false' || '' }}
-        fmt: ${{ inputs.fmt && inputs.metadata != 'true' }}
-        validate: ${{ inputs.validate && inputs.metadata != 'true' }}
+        fmt: ${{ inputs.fmt == 'true' && inputs.metadata != 'true' }}
+        validate: ${{ inputs.validate == 'true' && inputs.metadata != 'true' }}
         action: ${{ inputs.action }}
         metadata: ${{ inputs.metadata }}
         tfbackend-content: |
