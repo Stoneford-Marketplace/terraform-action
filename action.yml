@@ -47,6 +47,9 @@ inputs:
     description: The deployment IAM role to use. If not provided, will skip configuring AWS.
     required: false
     default: ''
+  tfvars-content:
+    description: The content of the variable file to use.
+    required: false
     
 outputs:
   metadata:
@@ -95,6 +98,7 @@ runs:
         tfbackend-content: |
           bucket = "stoneford-${{ inputs.account }}-terraform-state"
           key    = "${{ inputs.region }}/terraform.tfstate"
+        tfvars-content: ${{ inputs.tfvars-content }}
         comment: ${{ inputs.metadata != 'true' }}
         comment-identifier: ${{ inputs.directory }} - ${{ inputs.account }}
         comment-header: |
