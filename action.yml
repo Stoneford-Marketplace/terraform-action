@@ -62,7 +62,7 @@ runs:
       uses: aws-actions/configure-aws-credentials@v4
       with:
         role-to-assume: ${{ inputs.deployment_role }}
-        aws-region: us-east-1
+        aws-region: ${{ inputs.region }}
         
     - name: Copy base s3 backend config
       shell: bash
