@@ -22,16 +22,6 @@ inputs:
     description: The terraform action to run.
     required: false
     default: ''
-  metadata:
-    description: >
-      Whether to run terraform output in JSON format and produce a flattened "metadata" output that can be used as json
-      tfvars.
-    required: false
-    default: 'false'
-  metadata_destination:
-    description: The destination directory for the metadata output. If not provided, it will not be copied.
-    required: false
-    default: ''
   account:
     description: The account name to run terraform in.
     required: true
@@ -50,11 +40,6 @@ inputs:
   tfvars-content:
     description: The content of the variable file to use.
     required: false
-    
-outputs:
-  metadata:
-    description: The terraform output in JSON format.
-    value: ${{ steps.terraform.outputs.metadata }}
   
 runs:
   using: composite
@@ -66,13 +51,6 @@ runs:
       with:
         role-to-assume: ${{ inputs.deployment_role }}
         aws-region: ${{ inputs.region }}
-        
-    - name: Copy base s3 backend config
-      shell: bash
-      run: cp ${{env.SOURCE_DIR}} ${{ env.DESTINATION_DIR }}
-      env:
-        SOURCE_DIR: ${{ github.action_path }}/backend/s3_backend.tf
-        DESTINATION_DIR: ${{ inputs.directory }}/s3_backend.tf
 
     - name: Copy account specific tfvars
       if: ${{ hashFiles(env.SOURCE_DIR) != '' }}
@@ -86,28 +64,19 @@ runs:
 
     - name: Terraform
       id: terraform
-      uses: 7Factor/action-terraform@v2
+      uses: 7Factor/action-terraform@v3
       with:
         directory: ${{ inputs.directory }}
         workspace: ${{ inputs.workspace }}
-        init-args: ${{ inputs.metadata != 'true' && inputs.disable_backend == 'true' && '-backend=false' || '' }}
-        fmt: ${{ inputs.fmt == 'true' && inputs.metadata != 'true' }}
-        validate: ${{ inputs.validate == 'true' && inputs.metadata != 'true' }}
+        init-args: ${{ inputs.disable_backend == 'true' && '-backend=false' || '' }}
+        fmt: ${{ inputs.fmt == 'true' }}
+        validate: ${{ inputs.validate == 'true' }}
         action: ${{ inputs.action }}
-        metadata: ${{ inputs.metadata }}
-        tfbackend-content: |
+        backend-file: ${{ github.action_path }}/backend/s3_backend.tf
+        backend-config-content: |
           bucket = "stoneford-${{ inputs.account }}-terraform-state"
           key    = "${{ inputs.region }}/terraform.tfstate"
         tfvars-content: ${{ inputs.tfvars-content }}
-        comment: ${{ inputs.metadata != 'true' }}
         comment-identifier: ${{ inputs.directory }} - ${{ inputs.account }}
         comment-header: |
           ### Terraform Results for ${{ inputs.directory }} - ${{ inputs.account }}
-
-    - name: Create output vars file
-      if: ${{ inputs.metadata == 'true' && inputs.metadata_destination != '' }}
-      shell: bash
-      env:
-        TERRAFORM_OUTPUT: ${{ steps.terraform.metadata }}
-        METADATA_DESTINATION: ./${{ inputs.metadata_destination }}/${{ inputs.workspace }}.auto.tfvars.json
-      run: echo "$TERRAFORM_OUTPUT" > $METADATA_DESTINATION
