@@ -43,7 +43,7 @@ runs:
 
     - name: Terraform
       id: terraform
-      uses: 7Factor/action-terraform/metadata@jwood/v3
+      uses: 7Factor/action-terraform/metadata@v3
       with:
         workspace: ${{ inputs.workspace }}
         backend-file: ${{ github.action_path }}/../backend/s3_backend.tf

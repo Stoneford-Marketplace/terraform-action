@@ -64,7 +64,7 @@ runs:
 
     - name: Terraform
       id: terraform
-      uses: 7Factor/action-terraform@jwood/v3
+      uses: 7Factor/action-terraform@v3
       with:
         directory: ${{ inputs.directory }}
         workspace: ${{ inputs.workspace }}
