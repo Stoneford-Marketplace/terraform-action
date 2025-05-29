@@ -1,0 +1,53 @@
+﻿name: Terraform Metadata Stoneford
+description: >
+  Runs Terraform output command to generate "metadata". Metadata is just the output values formatted into JSON that is
+  compatible for use as input to other Terraform workflows.
+
+inputs:
+  workspace:
+    description: The name of the aws terraform workspace.
+    required: true
+  metadata_destination:
+    description: The destination directory for the metadata output. If not provided, it will not be copied.
+    required: false
+    default: ''
+  account:
+    description: The account name to run terraform in.
+    required: true
+  region:
+    description: The region to run terraform in.
+    required: false
+    default: 'us-east-1'
+  deployment_role:
+    description: The deployment IAM role to use. If not provided, will skip configuring AWS.
+    required: false
+    default: ''
+    
+outputs:
+  metadata:
+    description: The terraform output in JSON format.
+    value: ${{ steps.terraform.outputs.metadata }}
+  
+runs:
+  using: composite
+    
+  steps:
+    - name: Configure AWS credentials
+      if: inputs.deployment_role != ''
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ inputs.deployment_role }}
+        aws-region: ${{ inputs.region }}
+      
+    - uses: hashicorp/setup-terraform@v3
+
+    - name: Terraform
+      id: terraform
+      uses: 7Factor/action-terraform/metadata@jwood/v3
+      with:
+        workspace: ${{ inputs.workspace }}
+        backend-file: ${{ github.action_path }}/../backend/s3_backend.tf
+        backend-config-content: |
+          bucket = "stoneford-${{ inputs.account }}-terraform-state"
+          key    = "${{ inputs.region }}/terraform.tfstate"
+        metadata-destination: ${{ inputs.metadata_destination }}
