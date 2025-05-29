@@ -76,6 +76,7 @@ runs:
         backend-config-content: |
           bucket = "stoneford-${{ inputs.account }}-terraform-state"
           key    = "${{ inputs.region }}/terraform.tfstate"
+          region = "${{ inputs.region }}"
         tfvars-content: ${{ inputs.tfvars-content }}
         comment-identifier: ${{ inputs.directory }} - ${{ inputs.account }}
         comment-header: |
