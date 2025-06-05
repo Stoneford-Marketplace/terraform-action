@@ -53,12 +53,12 @@ runs:
         aws-region: ${{ inputs.region }}
 
     - name: Copy account specific tfvars
-      if: ${{ hashFiles(env.SOURCE_DIR) != '' }}
-      shell: bash
-      run: cp ${{env.SOURCE_DIR}} ${{ env.DESTINATION_DIR }}
       env:
-        SOURCE_DIR: ${{ inputs.directory }}/env/${{ inputs.account }}.tfvars
-        DESTINATION_DIR: ${{ inputs.directory }}/env.auto.tfvars
+        SOURCE_FILE: ${{ inputs.directory }}/env/${{ inputs.account }}.tfvars
+        DESTINATION_FILE: ${{ inputs.directory }}/env.auto.tfvars
+      shell: bash
+      run: |
+        [-f "$SOURCE_FILE" ] && cp "${{env.SOURCE_FILE}}" "${{ env.DESTINATION_FILE }}"
       
     - uses: hashicorp/setup-terraform@v3
 
