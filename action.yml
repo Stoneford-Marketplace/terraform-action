@@ -1,4 +1,4 @@
-﻿name: Terraform Stoneford
+﻿name: Stoneford Terraform Action
 description: >
   This action runs Terraform for the Stoneford ecosystem. It can run various Terraform actions such as plan and  apply.
   It also supports running fmt and validate commands.
