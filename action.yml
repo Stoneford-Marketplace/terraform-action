@@ -70,7 +70,7 @@ runs:
         DESTINATION_FILE: ${{ inputs.directory }}/env.auto.tfvars
       shell: bash
       run: |
-        [ -f "$SOURCE_FILE" ] && cp "${{env.SOURCE_FILE}}" "${{ env.DESTINATION_FILE }}"
+        [ -f "$SOURCE_FILE" ] && cp "${{env.SOURCE_FILE}}" "${{ env.DESTINATION_FILE }}" || true
 
     - uses: hashicorp/setup-terraform@v3
 
