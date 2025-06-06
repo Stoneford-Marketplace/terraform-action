@@ -64,6 +64,7 @@ runs:
         aws-region: ${{ inputs.region }}
 
     - name: Copy account specific tfvars
+      if: inputs.account != ''
       env:
         SOURCE_FILE: ${{ inputs.directory }}/env/${{ inputs.account }}.tfvars
         DESTINATION_FILE: ${{ inputs.directory }}/env.auto.tfvars
