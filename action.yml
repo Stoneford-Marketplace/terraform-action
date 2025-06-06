@@ -8,8 +8,8 @@ inputs:
     description: The directory to run terraform in.
     required: true
   workspace:
-    description: The name of the aws terraform workspace.
-    required: true
+    description: The name of the aws terraform workspace. Required if deployment_role is specified.
+    required: false
   fmt:
     description: Whether to run terraform fmt.
     required: false
@@ -43,12 +43,16 @@ runs:
   using: composite
 
   steps:
-    - name: Require account if deployment_role is provided
+    - name: Require account and workspace if deployment_role is provided
       if: inputs.deployment_role != ''
       shell: bash
       run: |
         if [ -z "${{ inputs.account }}" ]; then
           echo "account is required when deployment_role is provided"
+          exit 1
+        fi
+        if [ -z "${{ inputs.workspace }}" ]; then
+          echo "workspace is required when deployment_role is provided"
           exit 1
         fi
 
@@ -73,7 +77,7 @@ runs:
       id: terraform
       uses: 7Factor/action-terraform@v3
       env:
-        DISABLE_BACKEND: ${{ inputs.disable_backend == 'true' || inputs.deployment_role == '' || inputs.account == '' }}
+        DISABLE_BACKEND: ${{ inputs.disable_backend == 'true' || inputs.deployment_role == '' || inputs.account == '' || inputs.workspace == '' }}
         BACKEND_CONFIG_CONTENT: |
           bucket = "stoneford-${{ inputs.account }}-terraform-state"
           key    = "${{ inputs.region }}/terraform.tfstate"
