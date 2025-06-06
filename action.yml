@@ -22,8 +22,8 @@ inputs:
     description: The terraform action to run.
     required: false
   account:
-    description: The account name to run terraform in.
-    required: true
+    description: The account name to run terraform in. Required if deployment_role is specified.
+    required: false
   region:
     description: The region to run terraform in.
     required: false
@@ -43,6 +43,15 @@ runs:
   using: composite
 
   steps:
+    - name: Require account if deployment_role is provided
+      if: inputs.deployment_role != ''
+      shell: bash
+      run: |
+        if [ -z "${{ inputs.account }}" ]; then
+          echo "account is required when deployment_role is provided"
+          exit 1
+        fi
+
     - name: Configure AWS credentials
       if: inputs.deployment_role != ''
       uses: aws-actions/configure-aws-credentials@v4
@@ -64,7 +73,7 @@ runs:
       id: terraform
       uses: 7Factor/action-terraform@v3
       env:
-        DISABLE_BACKEND: ${{ inputs.disable_backend == 'true' || inputs.deployment_role == '' }}
+        DISABLE_BACKEND: ${{ inputs.disable_backend == 'true' || inputs.deployment_role == '' || inputs.account == '' }}
         BACKEND_CONFIG_CONTENT: |
           bucket = "stoneford-${{ inputs.account }}-terraform-state"
           key    = "${{ inputs.region }}/terraform.tfstate"
@@ -79,6 +88,6 @@ runs:
         backend-file: ${{ github.action_path }}/backend/s3_backend.tf
         backend-config-content: ${{ env.DISABLE_BACKEND != 'true' && env.BACKEND_CONFIG_CONTENT || '' }}
         tfvars-content: ${{ inputs.tfvars_content }}
-        comment-identifier: ${{ inputs.directory }} - ${{ inputs.account }}
+        comment-identifier: ${{ inputs.directory }}${{ inputs.account != '' && format(' - {0}', inputs.account) }}
         comment-header: |
-          ### Terraform Results for ${{ inputs.directory }} - ${{ inputs.account }}
+          ### Terraform Results for ${{ inputs.directory }}${{ inputs.account != '' && format(' - {0}', inputs.account) }}
