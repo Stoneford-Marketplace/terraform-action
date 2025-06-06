@@ -8,8 +8,8 @@ inputs:
     description: The directory to run terraform in.
     required: true
   workspace:
-    description: The name of the aws terraform workspace.
-    required: true
+    description: The name of the aws terraform workspace. Required if deployment_role is specified and backend is not disabled.
+    required: false
   fmt:
     description: Whether to run terraform fmt.
     required: false
@@ -21,10 +21,9 @@ inputs:
   action:
     description: The terraform action to run.
     required: false
-    default: ''
   account:
-    description: The account name to run terraform in.
-    required: true
+    description: The account name to run terraform in. Required if deployment_role is specified and backend is not disabled.
+    required: false
   region:
     description: The region to run terraform in.
     required: false
@@ -36,7 +35,6 @@ inputs:
   deployment_role:
     description: The deployment IAM role to use. If not provided, will skip configuring AWS.
     required: false
-    default: ''
   tfvars_content:
     description: The content of the variable file to use.
     required: false
@@ -45,6 +43,19 @@ runs:
   using: composite
 
   steps:
+    - name: Require account and workspace if deployment_role is provided
+      if: inputs.deployment_role != '' && inputs.disable_backend != 'true'
+      shell: bash
+      run: |
+        if [ -z "${{ inputs.account }}" ]; then
+          echo "account is required when deployment_role is provided"
+          exit 1
+        fi
+        if [ -z "${{ inputs.workspace }}" ]; then
+          echo "workspace is required when deployment_role is provided"
+          exit 1
+        fi
+
     - name: Configure AWS credentials
       if: inputs.deployment_role != ''
       uses: aws-actions/configure-aws-credentials@v4
@@ -65,19 +76,22 @@ runs:
     - name: Terraform
       id: terraform
       uses: 7Factor/action-terraform@v3
+      env:
+        DISABLE_BACKEND: ${{ inputs.disable_backend == 'true' || inputs.deployment_role == '' || inputs.account == '' || inputs.workspace == '' }}
+        BACKEND_CONFIG_CONTENT: |
+          bucket = "stoneford-${{ inputs.account }}-terraform-state"
+          key    = "${{ inputs.region }}/terraform.tfstate"
+          region = "${{ inputs.region }}"
       with:
         directory: ${{ inputs.directory }}
         workspace: ${{ inputs.workspace }}
-        init-args: ${{ inputs.disable_backend == 'true' && '-backend=false' || '' }}
+        init-args: ${{ env.DISABLE_BACKEND == 'true' && '-backend=false' || '' }}
         fmt: ${{ inputs.fmt == 'true' }}
         validate: ${{ inputs.validate == 'true' }}
         action: ${{ inputs.action }}
         backend-file: ${{ github.action_path }}/backend/s3_backend.tf
-        backend-config-content: |
-          bucket = "stoneford-${{ inputs.account }}-terraform-state"
-          key    = "${{ inputs.region }}/terraform.tfstate"
-          region = "${{ inputs.region }}"
+        backend-config-content: ${{ env.DISABLE_BACKEND != 'true' && env.BACKEND_CONFIG_CONTENT || '' }}
         tfvars-content: ${{ inputs.tfvars_content }}
-        comment-identifier: ${{ inputs.directory }} - ${{ inputs.account }}
+        comment-identifier: ${{ inputs.directory }}${{ inputs.account != '' && format(' - {0}', inputs.account) }}
         comment-header: |
-          ### Terraform Results for ${{ inputs.directory }} - ${{ inputs.account }}
+          ### Terraform Results for ${{ inputs.directory }}${{ inputs.account != '' && format(' - {0}', inputs.account) }}
