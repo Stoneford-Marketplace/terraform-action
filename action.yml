@@ -63,18 +63,21 @@ runs:
     - name: Terraform
       id: terraform
       uses: 7Factor/action-terraform@v3
+      env:
+        DISABLE_BACKEND: ${{ inputs.disable_backend == 'true' || inputs.deployment_role == '' }}
+        BACKEND_CONFIG_CONTENT: |
+          bucket = "stoneford-${{ inputs.account }}-terraform-state"
+          key    = "${{ inputs.region }}/terraform.tfstate"
+          region = "${{ inputs.region }}"
       with:
         directory: ${{ inputs.directory }}
         workspace: ${{ inputs.workspace }}
-        init-args: ${{ (inputs.disable_backend == 'true' || inputs.deployment_role == '') && '-backend=false' || '' }}
+        init-args: ${{ env.DISABLE_BACKEND == 'true' && '-backend=false' || '' }}
         fmt: ${{ inputs.fmt == 'true' }}
         validate: ${{ inputs.validate == 'true' }}
         action: ${{ inputs.action }}
         backend-file: ${{ github.action_path }}/backend/s3_backend.tf
-        backend-config-content: |
-          bucket = "stoneford-${{ inputs.account }}-terraform-state"
-          key    = "${{ inputs.region }}/terraform.tfstate"
-          region = "${{ inputs.region }}"
+        backend-config-content: ${{ env.DISABLE_BACKEND != 'true' && env.BACKEND_CONFIG_CONTENT || '' }}
         tfvars-content: ${{ inputs.tfvars_content }}
         comment-identifier: ${{ inputs.directory }} - ${{ inputs.account }}
         comment-header: |
