@@ -21,7 +21,6 @@ inputs:
   action:
     description: The terraform action to run.
     required: false
-    default: ''
   account:
     description: The account name to run terraform in.
     required: true
@@ -36,7 +35,6 @@ inputs:
   deployment_role:
     description: The deployment IAM role to use. If not provided, will skip configuring AWS.
     required: false
-    default: ''
   tfvars_content:
     description: The content of the variable file to use.
     required: false
