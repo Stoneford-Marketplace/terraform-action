@@ -8,7 +8,7 @@ inputs:
     description: The directory to run terraform in.
     required: true
   workspace:
-    description: The name of the aws terraform workspace. Required if deployment_role is specified.
+    description: The name of the aws terraform workspace. Required if deployment_role is specified and backend is not disabled.
     required: false
   fmt:
     description: Whether to run terraform fmt.
@@ -22,7 +22,7 @@ inputs:
     description: The terraform action to run.
     required: false
   account:
-    description: The account name to run terraform in. Required if deployment_role is specified.
+    description: The account name to run terraform in. Required if deployment_role is specified and backend is not disabled.
     required: false
   region:
     description: The region to run terraform in.
@@ -44,7 +44,7 @@ runs:
 
   steps:
     - name: Require account and workspace if deployment_role is provided
-      if: inputs.deployment_role != ''
+      if: inputs.deployment_role != '' && inputs.disable_backend != 'true'
       shell: bash
       run: |
         if [ -z "${{ inputs.account }}" ]; then
